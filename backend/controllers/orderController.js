@@ -2,7 +2,7 @@ import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
 import Stripe from "stripe";
 
-const currency = "inr";
+const currency = "usd";
 const delivery_charge = 49;
 
 //GATEWAY INITIALIZE
