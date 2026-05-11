@@ -17,8 +17,8 @@ const VerifyPayment = () => {
         return null;
       }
 
-      const res = await axios.post(backendUrl + "/api/order/verifystripe",{ success, orderId },{ headers: { token } });
-
+      //const res = await axios.post(backendUrl + "/api/order/verifystripe",{ success, orderId },{ headers: { token } });
+      const res = await axios.post("/api/order/verifystripe",{ success, orderId },{ headers: { token } });
       if (res.data.success) {
         setCartItems({});
         navigate('/orders')

@@ -53,8 +53,8 @@ const PlaceOrder = () => {
       switch (method) {
         //api for COD
         case "cod":
-          const res = await axios.post(backendUrl+ "/api/order/place", orderData, {headers: { token }});
-          
+          //const res = await axios.post(backendUrl+ "/api/order/place", orderData, {headers: { token }});
+          const res = await axios.post("/api/order/place", orderData, {headers: { token }});
           if (res.data.success) {
             setCartItems({});
             navigate("/orders");
@@ -63,7 +63,8 @@ const PlaceOrder = () => {
           }
           break;
         case 'stripe':
-          const stripe = await axios.post(backendUrl + "/api/order/stripe", orderData, {headers: { token },});
+          //const stripe = await axios.post(backendUrl + "/api/order/stripe", orderData, {headers: { token },});
+          const stripe = await axios.post("/api/order/stripe", orderData, {headers: { token },});
           if (stripe.data.success) {
             const { session_url } = stripe.data
             window.location.replace(session_url)
