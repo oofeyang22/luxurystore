@@ -8,22 +8,22 @@ const Collection = () => {
   const { products, search, showSearch} =useContext(ShopContext);
   const [showFilters, setShowFilters] = useState(false);
   const [filterProducts, setFilterProducts] = useState([]);
-  const [category, setCaterogy] = useState([]);
-  const [subCategory, setSubCaterogy] = useState([]);
+  const [category, setCategory] = useState([]);
+  const [subCategory, setSubCategory] = useState([]);
   const [sortType, setSortType] = useState("relavent");
 
   const toggleCategory = (e) => {
     if (category.includes(e.target.value)) {
-      setCaterogy((prev) => prev.filter((item) => item !== e.target.value));
+      setCategory((prev) => prev.filter((item) => item !== e.target.value));
     } else {
-      setCaterogy((prev) => [...prev, e.target.value]);
+      setCategory((prev) => [...prev, e.target.value]);
     } 
   };
   const toggleSubCategory = (e) => {
     if (subCategory.includes(e.target.value)) {
-      setSubCaterogy((prev) => prev.filter((item) => item !== e.target.value));
+      setSubCategory((prev) => prev.filter((item) => item !== e.target.value));
     } else {
-      setSubCaterogy((prev) => [...prev, e.target.value]);
+      setSubCategory((prev) => [...prev, e.target.value]);
     }
   };
 

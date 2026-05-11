@@ -6,7 +6,7 @@ import { toast } from "react-toastify";
 
 
 const VerifyPayment = () => {
-  const { navigate, token, setCartItems, backendUrl } = useContext(ShopContext);
+  const { navigate, token, setCartItems } = useContext(ShopContext);
   const [searchParams] = useSearchParams();
   const success = searchParams.get("success");
   const orderId = searchParams.get("orderId");

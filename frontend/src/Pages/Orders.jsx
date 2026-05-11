@@ -5,7 +5,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const Orders = () => {
-  const { backendUrl, currency, token } = useContext(ShopContext);
+  const { currency, token } = useContext(ShopContext);
   const [orderData, setorderData] = useState([]);
 
   const getAllOrdersData = async () => {
