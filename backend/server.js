@@ -21,7 +21,7 @@ app.use(express.json())
 app.use(cors({
   origin: [
     'https://luxurystore-7d5q.vercel.app',
-
+    'https://luxurystore-dqwe.vercel.app'
   ],
   credentials: true
 }))
