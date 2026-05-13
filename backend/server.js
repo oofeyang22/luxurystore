@@ -18,7 +18,13 @@ connectCloudinary()
 
 //middleware
 app.use(express.json())
-app.use(cors())
+app.use(cors({
+  origin: [
+    'https://luxurystore-7d5q.vercel.app',
+
+  ],
+  credentials: true
+}))
 
 
 //api endpoints
