@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { assets } from "../assets/assets";
 import axios from "axios";
-//import { backendUrl } from "../App";
+import { backendUrl } from "../App";
 import { toast } from "react-toastify";
 
 
@@ -37,8 +37,8 @@ const Add = ({ token }) => {
       formData.append("bestseller", bestseller);
       formData.append("sizes", JSON.stringify(sizes));
 
-      //const response = await axios.post(backendUrl + "/api/product/add", formData, { headers: { token } })
-      const response = await axios.post("/api/product/add", formData, { headers: { token } })
+      const response = await axios.post(backendUrl + "/api/product/add", formData, { headers: { token } })
+
       if (response.data.success) {
         toast.success(response.data.message)
         setName('')

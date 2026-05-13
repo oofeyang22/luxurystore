@@ -7,7 +7,7 @@ import axios from "axios";
 import toast from "react-hot-toast";
 
 const PlaceOrder = () => {
-  const { navigate, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext);
+  const { backendUrl, navigate, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext);
   const [method, setMethod] = useState("cod");
   const [formData, setFormData] = useState({
     firstName: "",
@@ -53,8 +53,7 @@ const PlaceOrder = () => {
       switch (method) {
         //api for COD
         case "cod":
-          //const res = await axios.post(backendUrl+ "/api/order/place", orderData, {headers: { token }});
-          const res = await axios.post("/api/order/place", orderData, {headers: { token }});
+          const res = await axios.post(backendUrl+ "/api/order/place", orderData, {headers: { token }});
           if (res.data.success) {
             setCartItems({});
             navigate("/orders");
@@ -63,8 +62,7 @@ const PlaceOrder = () => {
           }
           break;
         case 'stripe':
-          //const stripe = await axios.post(backendUrl + "/api/order/stripe", orderData, {headers: { token },});
-          const stripe = await axios.post("/api/order/stripe", orderData, {headers: { token },});
+          const stripe = await axios.post(backendUrl + "/api/order/stripe", orderData, {headers: { token },});
           if (stripe.data.success) {
             const { session_url } = stripe.data
             window.location.replace(session_url)

@@ -2,7 +2,7 @@ import React from "react";
 
 const NewsletterBox = () => {
 
-  const haldleNewsletter = (e) => {
+  const handleNewsletter = (e) => {
     e.preventDefault();
   };
   return (
@@ -12,7 +12,7 @@ const NewsletterBox = () => {
       <p className='text-gray-400 mt-3'>
         Subscribe now to Easyshop Clothes and enjoy 20% off your first purchase!
       </p>
-      <form onSubmit={haldleNewsletter} className='w-full sm:w-1/2 flex items-center gap-3 my-6 border pl-3 m-auto'>
+      <form onSubmit={handleNewsletter} className='w-full sm:w-1/2 flex items-center gap-3 my-6 border pl-3 m-auto'>
         <input
           required
           className='w-full sm:flex-1 outline-none'
