@@ -1,16 +1,2 @@
 {
-  "experimentalServices": {
-    "frontend": {
-      "entrypoint": "frontend",
-      "routePrefix": "/"
-    },
-    "admin": {
-      "entrypoint": "admin",
-      "routePrefix": "/admin"
-    },
-    "backend": {
-      "entrypoint": "backend",
-      "routePrefix": "/api"
-    }
-  }
 }
