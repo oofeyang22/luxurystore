@@ -101,7 +101,7 @@ const Cart = () => {
               onClick={() => navigate("/place-order")}
               className='text-sm bg-black text-white my-8 px-8 py-3'
             >
-              PROCED TO CHECKOUT
+              PROCEED TO CHECKOUT
             </button>
           </div>
         </div>
