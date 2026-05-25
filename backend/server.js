@@ -7,7 +7,7 @@ import userRouter from "./routes/userRoute.js";
 import productRouter from "./routes/productRoute.js";
 import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
-
+import { stripeWebhook } from "./controllers/stripewebhook.js";
 
 //app congig
 const app = express();
@@ -15,11 +15,12 @@ const port = process.env.PORT || 4000;
 connectDB()
 connectCloudinary()
 
-
+app.post('/api/stripe/webhook', express.raw({type: 'application/json'}), stripeWebhook);
 //middleware
 app.use(express.json())
 app.use(cors({
   origin: [
+    'http://localhost:5173',
     'https://luxurystore-7d5q.vercel.app',
     'https://luxurystore-dqwe.vercel.app'
   ],

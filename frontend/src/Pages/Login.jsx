@@ -6,48 +6,60 @@ import { toast } from "react-toastify";
 const Login = () => {
   const [currState, setCurrState] = useState("Login");
   const [errors, setErrors] = useState(false);
-  const { backendUrl, navigate, setToken, token} = useContext(ShopContext);
+  const { backendUrl, navigate, setToken, token } = useContext(ShopContext);
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
-  const loginInputData = (e) => {
-    const { name, value } = e.target;
-    setLoginData({ ...loginData, [name]: value });
-  };
-
   const onSubmitHandler = async (e) => {
     e.preventDefault();
 
     try {
-      let schema;
-      let newURL = backendUrl;
-
       if (currState === "Sign Up") {
-        const response = await axios.post(backendUrl + '/api/user/register', { name, email, password })
+        const response = await axios.post(backendUrl + '/api/user/register', { 
+          name, 
+          email, 
+          password 
+        })
 
         if (response.data.success) {
           setToken(response.data.token)
           localStorage.setItem('token', response.data.token)
+          
+          // ADD THIS: Store userId from registration response
+          if (response.data.user && response.data.user._id) {
+            localStorage.setItem('userId', response.data.user._id)
+          }
+          
+          toast.success("Registration successful!");
         } else {
           toast.error(response.data.message);
         }
 
       } else {
-        const response = await axios.post(backendUrl + '/api/user/login', { email, password })
+        const response = await axios.post(backendUrl + '/api/user/login', { 
+          email, 
+          password 
+        })
+        
         if (response.data.success) {
           setToken(response.data.token)
           localStorage.setItem('token', response.data.token)
+          
+          // ADD THIS: Store userId from login response
+          if (response.data.user && response.data.user._id) {
+            localStorage.setItem('userId', response.data.user._id)
+          }
+          
+          toast.success("Login successful!");
         } else {
           toast.error(response.data.message);
         }
-
       }
     } catch (error) {
       console.log(error);
-      toast.error(error.message)
-
+      toast.error(error.response?.data?.message || error.message)
     }
   };
 
@@ -98,6 +110,7 @@ const Login = () => {
           {errors.email}
         </p>
       )}
+      
       <input
         onChange={(e) => setPassword(e.target.value)}
         value={password}

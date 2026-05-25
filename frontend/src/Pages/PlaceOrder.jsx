@@ -26,58 +26,61 @@ const PlaceOrder = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const onSubmitHandler = async (e) => {
+  
+   const onSubmitHandler = async (e) => {
     e.preventDefault();
     try {
-      let orderItems = [];
-      for (const items in cartItems) {
-        for (const item in cartItems[items]) {
-          if (cartItems[items][item] > 0) {
-            const itemInfo = structuredClone(products.find((product) => product._id === items));
-
-            if (itemInfo) {
-              itemInfo.size = item;
-              itemInfo.quantity = cartItems[items][item];
-              orderItems.push(itemInfo);
+        let orderItems = [];
+        for (const items in cartItems) {
+            for (const item in cartItems[items]) {
+                if (cartItems[items][item] > 0) {
+                    const itemInfo = structuredClone(products.find((product) => product._id === items));
+                    if (itemInfo) {
+                        itemInfo.size = item;
+                        itemInfo.quantity = cartItems[items][item];
+                        orderItems.push(itemInfo);
+                    }
+                }
             }
-          }
         }
-      }
-      
-      let orderData = {
-        items: orderItems,
-        address: formData,
-        amount: getCartAmount() + delivery_fee,
-      };
+        
+        // Get userId from localStorage
+        const userId = localStorage.getItem("userId");
+        
+        let orderData = {
+            items: orderItems,
+            address: formData,
+            amount: getCartAmount() + delivery_fee,
+            userId: userId  // ADD THIS LINE
+        };
 
-      switch (method) {
-        //api for COD
-        case "cod":
-          const res = await axios.post(backendUrl+ "/api/order/place", orderData, {headers: { token }});
-          if (res.data.success) {
-            setCartItems({});
-            navigate("/orders");
-          } else {
-            toast.error(res.data.message);
-          }
-          break;
-        case 'stripe':
-          const stripe = await axios.post(backendUrl + "/api/order/stripe", orderData, {headers: { token },});
-          if (stripe.data.success) {
-            const { session_url } = stripe.data
-            window.location.replace(session_url)
-          } else {
-            toast.error(stripe.data.message)
-          }
-          break
-        default:
-          break;
-      }
+        switch (method) {
+            case "cod":
+                const res = await axios.post(backendUrl+ "/api/order/place", orderData, {headers: { token }});
+                if (res.data.success) {
+                    setCartItems({});
+                    navigate("/orders");
+                } else {
+                    toast.error(res.data.message);
+                }
+                break;
+            case 'stripe':
+                const stripe = await axios.post(backendUrl + "/api/order/stripe", orderData, {headers: { token }});
+                if (stripe.data.success) {
+                    const { session_url } = stripe.data
+                    window.location.replace(session_url)
+                } else {
+                    toast.error(stripe.data.message)
+                }
+                break
+            default:
+                break;
+        }
     } catch (error) {
-      console.log(error);
-      toast.error(error.message);
+        console.log(error);
+        toast.error(error.message);
     }
-  };
+};
 
   return (
     <form onSubmit={onSubmitHandler}
