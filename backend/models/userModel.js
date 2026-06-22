@@ -19,6 +19,8 @@ const userSchema = new mongoose.Schema(
       type: Object,
       default: {},
     },
+    profilePicture: { type: String, default: "" },
+    isActive: { type: Boolean, default: true },
   },
   { minimize: false }
 );

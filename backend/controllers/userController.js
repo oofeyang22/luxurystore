@@ -1,28 +1,24 @@
 import validator from "validator";
 import bcrypt from "bcrypt";
 import userModel from "../models/userModel.js";
-// import createError from "http-errors";
-// import { createToken } from "../helpers/jsonwebtoken.js";
-// import { errorResponse, successResponse } from "./response.controller.js";
-// import { adminEmail, adminPassword, jwtSecret } from "../secret.js";
 import jwt from "jsonwebtoken";
 
 const createToken =(id) =>{
   return jwt.sign({id},process.env.JWT_SECRET)
 }
 
-//route for user register
+
 const registerUser = async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
 
-    //check user already exists
+
     const existUser = await userModel.findOne({ email });
     if (existUser) {
       return res.json({success:false, message:"User already Registered"})
     }
 
-    //validating email and strong password
+
     if (!validator.isEmail(email)) {
       return res.json({success:false, message:"Please enter a valid email"})
     }
@@ -31,7 +27,7 @@ const registerUser = async (req, res, next) => {
       return res.json({success:false, message:"Password must be 8char+ "})
     }
 
-    // hashing user password
+
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
 
@@ -43,7 +39,7 @@ const registerUser = async (req, res, next) => {
 
     const user = await newUser.save()
     
-    //create token
+
     const token = createToken(user._id);
     res.json({success:true,token})
   } catch (error) {
@@ -54,7 +50,7 @@ const registerUser = async (req, res, next) => {
    
 }
 
-//route for user login
+
 const loginUser = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -80,7 +76,7 @@ const loginUser = async (req, res, next) => {
   }
 };
 
-////route for admin login
+
 const adminLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -96,4 +92,65 @@ const adminLogin = async (req, res, next) => {
   }
 };
 
-export { registerUser, loginUser, adminLogin };
+
+const getProfile = async (req, res) => {
+  try {
+    const user = await userModel.findById(req.body.userId).select("-password");
+    if (!user) return res.json({ success: false, message: "User not found" });
+    res.json({ success: true, user });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+
+const updateProfile = async (req, res) => {
+  try {
+    const { userId, name, email } = req.body;
+    const imageFile = req.file; // multer upload
+
+    const updateData = { name, email };
+
+    if (imageFile) {
+      // Upload to Cloudinary (you already have connectCloudinary set up)
+      const { v2: cloudinary } = await import("cloudinary");
+      const result = await cloudinary.uploader.upload(imageFile.path, {
+        folder: "profile_pictures",
+        transformation: [{ width: 300, height: 300, crop: "fill", gravity: "face" }],
+      });
+      updateData.profilePicture = result.secure_url;
+    }
+
+    const user = await userModel
+      .findByIdAndUpdate(userId, updateData, { new: true })
+      .select("-password");
+
+    res.json({ success: true, user, message: "Profile updated" });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+
+const deleteAccount = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    await userModel.findByIdAndDelete(userId);
+    // Optionally: also delete their orders, cart, etc.
+    res.json({ success: true, message: "Account deleted" });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+const deactivateAccount = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    await userModel.findByIdAndUpdate(userId, { isActive: false });
+    res.json({ success: true, message: "Account deactivated" });
+  } catch (error) {
+    res.json({ success: false, message: error.message });
+  }
+};
+
+export { registerUser, loginUser, adminLogin, getProfile, updateProfile, deleteAccount, deactivateAccount };
