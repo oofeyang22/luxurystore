@@ -26,66 +26,77 @@ const PlaceOrder = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  
-   const onSubmitHandler = async (e) => {
+
+  const onSubmitHandler = async (e) => {
     e.preventDefault();
     try {
-        let orderItems = [];
-        for (const items in cartItems) {
-            for (const item in cartItems[items]) {
-                if (cartItems[items][item] > 0) {
-                    const itemInfo = structuredClone(products.find((product) => product._id === items));
-                    if (itemInfo) {
-                        itemInfo.size = item;
-                        itemInfo.quantity = cartItems[items][item];
-                        orderItems.push(itemInfo);
-                    }
-                }
+      let orderItems = [];
+      for (const items in cartItems) {
+        for (const item in cartItems[items]) {
+          if (cartItems[items][item] > 0) {
+            const itemInfo = structuredClone(products.find((product) => product._id === items));
+            if (itemInfo) {
+              itemInfo.size = item;
+              itemInfo.quantity = cartItems[items][item];
+              orderItems.push(itemInfo);
             }
+          }
         }
-        
-        // Get userId from localStorage
-        const userId = localStorage.getItem("userId");
-        
-        let orderData = {
-            items: orderItems,
-            address: formData,
-            amount: getCartAmount() + delivery_fee,
-            userId: userId  // ADD THIS LINE
-        };
+      }
 
-        switch (method) {
-            case "cod":
-                const res = await axios.post(backendUrl+ "/api/order/place", orderData, {headers: { token }});
-                if (res.data.success) {
-                    setCartItems({});
-                    navigate("/orders");
-                } else {
-                    toast.error(res.data.message);
-                }
-                break;
-            case 'stripe':
-                const stripe = await axios.post(backendUrl + "/api/order/stripe", orderData, {headers: { token }});
-                if (stripe.data.success) {
-                    const { session_url } = stripe.data
-                    window.location.replace(session_url)
-                } else {
-                    toast.error(stripe.data.message)
-                }
-                break
-            default:
-                break;
+  
+      const userId = localStorage.getItem("userId");
+
+      let orderData = {
+        items: orderItems,
+        address: formData,
+        amount: getCartAmount() + delivery_fee,
+        userId: userId,
+      };
+
+      switch (method) {
+        case "cod": {
+          const res = await axios.post(backendUrl + "/api/order/place", orderData, { headers: { token } });
+          if (res.data.success) {
+            setCartItems({});
+            navigate("/orders");
+          } else {
+            toast.error(res.data.message);
+          }
+          break;
         }
+        case "stripe": {
+          const stripe = await axios.post(backendUrl + "/api/order/stripe", orderData, { headers: { token } });
+          if (stripe.data.success) {
+            const { session_url } = stripe.data;
+            window.location.replace(session_url);
+          } else {
+            toast.error(stripe.data.message);
+          }
+          break;
+        }
+        case "paystack": {
+          const paystackRes = await axios.post(backendUrl + "/api/order/paystack", orderData, { headers: { token } });
+          if (paystackRes.data.success) {
+            window.location.replace(paystackRes.data.authorization_url);
+          } else {
+            toast.error(paystackRes.data.message);
+          }
+          break;
+        }
+        default:
+          break;
+      }
     } catch (error) {
-        console.log(error);
-        toast.error(error.message);
+      console.log(error);
+      toast.error(error.message);
     }
-};
+  };
 
   return (
     <form onSubmit={onSubmitHandler}
       className='flex flex-col sm:flex-row justify-between gap-4 pt-5 sm:pt-14 min-h-[80vh] border-t'>
-      {/* -------------Left side ---------- */}
+
       <div className='flex flex-col gap-4 w-full sm:max-w-120'>
         <div className='text-xl sm:text-2xl my-3'>
           <Title text1={"DELIVERY"} text2={"INFORMATION"} />
@@ -180,7 +191,7 @@ const PlaceOrder = () => {
         />
       </div>
 
-      {/* ------- place order right side------- */}
+
 
       <div className='mt-8'>
         <div className='mt-8 min-w-80'>
@@ -205,7 +216,20 @@ const PlaceOrder = () => {
               />
             </div>
 
-
+            <div
+              onClick={() => setMethod("paystack")}
+              className='flex items-center gap-3 border p-2 px-3 cursor-pointer'
+            >
+              <p
+                className={`min-w-3.5 h-3.5 border rounded-full ${method === "paystack" ? "bg-green-700" : ""
+                  }`}
+              ></p>
+              <img
+                className='h-5 mx-4'
+                src={assets.paystack_logo}
+                alt='paystack logo'
+              />
+            </div>
 
             <div
               onClick={() => setMethod("cod")}
@@ -226,7 +250,6 @@ const PlaceOrder = () => {
           <button
             type='submit'
             className='bg-black text-white px-16 py-3 text-sm'
-          // onClick={()=>navigate('/orders')}
           >
             PLACE ORDER
           </button>

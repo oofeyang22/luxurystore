@@ -12,12 +12,20 @@ import { stripeWebhook } from "./controllers/stripewebhook.js";
 //app congig
 const app = express();
 const port = process.env.PORT || 4000;
+
+
 connectDB()
 connectCloudinary()
 
 app.post('/api/stripe/webhook', express.raw({type: 'application/json'}), stripeWebhook);
 //middleware
-app.use(express.json())
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
+
+
 app.use(cors({
   origin: [
     'http://localhost:5173',
@@ -26,6 +34,7 @@ app.use(cors({
   ],
   credentials: true
 }))
+
 
 
 //api endpoints

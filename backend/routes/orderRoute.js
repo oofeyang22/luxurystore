@@ -1,30 +1,39 @@
-
 import express from "express";
 import {
   allOrders,
   placeOrder,
+  placeOrderPaystack,
   placeOrderRazorpay,
   placeOrderStripe,
   updateStatus,
   userOrders,
+  verifyPaystack,
   verifyStripePayment,
+  paystackWebhook,
 } from "../controllers/orderController.js";
 import authUser from "../middleware/Auth.js";
-import adminAuth  from "../middleware/adminAuth.js"
+import adminAuth from "../middleware/adminAuth.js";
 
 const orderRouter = express.Router();
-// admin feature
+
+
 orderRouter.post("/list", adminAuth, allOrders);
 orderRouter.post("/status", adminAuth, updateStatus);
-// payment feature
+
+
 orderRouter.post("/place", authUser, placeOrder);
 orderRouter.post("/stripe", authUser, placeOrderStripe);
-orderRouter.post("/razorpay",authUser, placeOrderRazorpay);
+orderRouter.post("/paystack", authUser, placeOrderPaystack);
+orderRouter.post("/razorpay", authUser, placeOrderRazorpay);
 
-// user
+
 orderRouter.post("/userorders", authUser, userOrders);
 
-//verify payment
+
 orderRouter.post("/verifystripe", authUser, verifyStripePayment);
+orderRouter.post("/verifypaystack", authUser, verifyPaystack);
+
+
+orderRouter.post("/paystack-webhook", paystackWebhook);
 
 export default orderRouter;
