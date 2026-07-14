@@ -2,6 +2,8 @@ import validator from "validator";
 import bcrypt from "bcrypt";
 import userModel from "../models/userModel.js";
 import jwt from "jsonwebtoken";
+import { v2 as cloudinary } from "cloudinary";
+import streamifier from "streamifier";
 
 const createToken =(id) =>{
   return jwt.sign({id},process.env.JWT_SECRET)
@@ -107,27 +109,72 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const { userId, name, email } = req.body;
-    const imageFile = req.file; // multer upload
+    const imageFile = req.file;
 
-    const updateData = { name, email };
+    const updateData = {};
 
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+
+    // Upload profile image to Cloudinary
     if (imageFile) {
-      // Upload to Cloudinary (you already have connectCloudinary set up)
-      const { v2: cloudinary } = await import("cloudinary");
-      const result = await cloudinary.uploader.upload(imageFile.path, {
-        folder: "profile_pictures",
-        transformation: [{ width: 300, height: 300, crop: "fill", gravity: "face" }],
-      });
+      const uploadFromBuffer = () =>
+        new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(
+            {
+              folder: "profile_pictures",
+              transformation: [
+                {
+                  width: 300,
+                  height: 300,
+                  crop: "fill",
+                  gravity: "face",
+                },
+              ],
+            },
+            (error, result) => {
+              if (error) return reject(error);
+              resolve(result);
+            }
+          );
+
+          streamifier
+            .createReadStream(imageFile.buffer)
+            .pipe(uploadStream);
+        });
+
+      const result = await uploadFromBuffer();
+
       updateData.profilePicture = result.secure_url;
+      updateData.profilePictureId = result.public_id;
     }
 
-    const user = await userModel
-      .findByIdAndUpdate(userId, updateData, { new: true })
+    const updatedUser = await userModel
+      .findByIdAndUpdate(userId, updateData, {
+        new: true,
+        runValidators: true,
+      })
       .select("-password");
 
-    res.json({ success: true, user, message: "Profile updated" });
+    if (!updatedUser) {
+      return res.json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Profile updated successfully",
+      user: updatedUser,
+    });
   } catch (error) {
-    res.json({ success: false, message: error.message });
+    console.error(error);
+
+    res.json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 

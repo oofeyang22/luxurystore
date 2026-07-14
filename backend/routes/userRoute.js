@@ -1,13 +1,9 @@
 import express from "express";
-import multer from "multer";
+import upload from "../middleware/multer.js";
 import { loginUser, registerUser, adminLogin, getProfile, updateProfile, deleteAccount, deactivateAccount } from "../controllers/userController.js";
 import authUser from "../middleware/Auth.js";
 
-const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
-});
-const upload = multer({ storage });
+
 
 const userRouter = express.Router();
 

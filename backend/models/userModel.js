@@ -20,6 +20,7 @@ const userSchema = new mongoose.Schema(
       default: {},
     },
     profilePicture: { type: String, default: "" },
+    profilePictureId: {type: String, default: "",},
     isActive: { type: Boolean, default: true },
   },
   { minimize: false }
