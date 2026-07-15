@@ -60,6 +60,7 @@ const PlaceOrder = () => {
           if (res.data.success) {
             setCartItems({});
             navigate("/orders");
+            toast.success('order successfully placed')
           } else {
             toast.error(res.data.message);
           }
@@ -70,6 +71,7 @@ const PlaceOrder = () => {
           if (stripe.data.success) {
             const { session_url } = stripe.data;
             window.location.replace(session_url);
+            toast.success('order successfully placed')
           } else {
             toast.error(stripe.data.message);
           }
@@ -79,6 +81,7 @@ const PlaceOrder = () => {
           const paystackRes = await axios.post(backendUrl + "/api/order/paystack", orderData, { headers: { token } });
           if (paystackRes.data.success) {
             window.location.replace(paystackRes.data.authorization_url);
+            toast.success('order successfully placed')
           } else {
             toast.error(paystackRes.data.message);
           }
