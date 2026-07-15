@@ -4,7 +4,7 @@ import CartTotal from "../components/CartTotal";
 import { assets } from "../assets/assets";
 import { ShopContext } from "../context/ShopContext";
 import axios from "axios";
-import toast from "react-hot-toast";
+import { toast } from 'react-toastify';
 
 const PlaceOrder = () => {
   const { backendUrl, navigate, token, cartItems, setCartItems, getCartAmount, delivery_fee, products } = useContext(ShopContext);

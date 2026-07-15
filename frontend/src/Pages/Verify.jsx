@@ -3,7 +3,7 @@ import React, { useContext, useEffect } from "react";
 import { ShopContext } from "../context/ShopContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
-import toast from "react-hot-toast";
+import { toast } from 'react-toastify';
 
 const VerifyPayment = () => {
   const { backendUrl, token, setCartItems } = useContext(ShopContext);
