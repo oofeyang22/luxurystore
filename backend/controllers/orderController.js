@@ -3,6 +3,7 @@ import axios from "axios";
 import Stripe from "stripe";
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
+import productModel from "../models/productModel.js";
 
 const currency = "usd";
 const delivery_charge = 49;
@@ -46,6 +47,18 @@ const placeOrderStripe = async (req, res, next) => {
       date: Date.now(),
     };
 
+
+    const dbProducts = await productModel.find({
+      _id: { $in: items.map((item) => item._id) },
+    });
+    const priceById = new Map(dbProducts.map((p) => [p._id.toString(), p.price]));
+
+    for (const item of items) {
+      if (!priceById.has(item._id?.toString())) {
+        return res.json({ success: false, message: `Product ${item._id} not found` });
+      }
+    }
+
     const newOrder = new orderModel(orderData);
     await newOrder.save();
 
@@ -55,7 +68,7 @@ const placeOrderStripe = async (req, res, next) => {
         product_data: {
           name: item.name,
         },
-        unit_amount: Math.round(item.price * 100), 
+        unit_amount: Math.round(priceById.get(item._id.toString()) * 100),
       },
       quantity: item.quantity,
     }));
@@ -90,22 +103,47 @@ const placeOrderStripe = async (req, res, next) => {
 };
 
 
+const USD_NGN_RATE = parseFloat(process.env.USD_NGN_RATE);
+
 const placeOrderPaystack = async (req, res, next) => {
   try {
-    const { userId, address, amount, items } = req.body;
+    const { userId, address, items } = req.body;
     const { origin } = req.headers;
 
     if (!address?.email) {
       return res.json({ success: false, message: "Email is required for Paystack payment" });
     }
 
+    if (!USD_NGN_RATE || Number.isNaN(USD_NGN_RATE)) {
+      console.log("USD_NGN_RATE is not configured");
+      return res.json({ success: false, message: "Payment temporarily unavailable" });
+    }
+
+    const dbProducts = await productModel.find({
+      _id: { $in: items.map((item) => item._id) },
+    });
+    const priceById = new Map(dbProducts.map((p) => [p._id.toString(), p.price]));
+
+    let usdTotal = delivery_charge;
+    for (const item of items) {
+      const price = priceById.get(item._id?.toString());
+      if (price === undefined) {
+        return res.json({ success: false, message: `Product ${item._id} not found` });
+      }
+      usdTotal += price * item.quantity;
+    }
+
+    const ngnTotal = usdTotal * USD_NGN_RATE;
+    const amountKobo = Math.round(ngnTotal * 100);
+
     const orderData = {
       items,
       address,
-      amount,
+      amount: usdTotal,
       userId,
       paymentMethod: "paystack",
       payment: false,
+      paystackAmountKobo: amountKobo,
       date: Date.now(),
     };
 
@@ -117,8 +155,8 @@ const placeOrderPaystack = async (req, res, next) => {
       "https://api.paystack.co/transaction/initialize",
       {
         email: address.email,
-        amount: Math.round(amount * 100),
-        currency: "NGN", 
+        amount: amountKobo,
+        currency: "NGN",
         callback_url: `${origin}/verify?orderId=${newOrder._id}`,
         metadata: {
           orderId: newOrder._id.toString(),
@@ -140,6 +178,7 @@ const placeOrderPaystack = async (req, res, next) => {
         reference: response.data.data.reference,
       });
     } else {
+      await orderModel.findByIdAndDelete(newOrder._id);
       res.json({ success: false, message: "Unable to initialize Paystack payment" });
     }
   } catch (error) {
@@ -200,21 +239,47 @@ const verifyStripePayment = async (req, res, next) => {
     if (success === "true") {
       const order = await orderModel.findById(orderId);
 
-      if (order && order.payment === true) {
+      if (!order) {
+        return res.json({ success: false, message: "Order not found" });
+      }
+
+      if (order.payment === true) {
+        await userModel.findByIdAndUpdate(userId, { cartData: {} });
+        return res.json({ success: true, message: "Payment confirmed" });
+      }
+
+      if (sessionId) {
+        try {
+          const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+          if (session.metadata?.orderId !== orderId) {
+            console.log(`Stripe orderId mismatch: session ${sessionId} belongs to order ${session.metadata?.orderId}, not ${orderId}`);
+            return res.json({ success: false, message: "Payment verification failed" });
+          }
+
+          if (session.payment_status === "paid") {
+            await orderModel.findByIdAndUpdate(orderId, {
+              payment: true,
+              paymentIntentId: session.payment_intent,
+              status: "Confirmed",
+            });
+            await userModel.findByIdAndUpdate(userId, { cartData: {} });
+            return res.json({ success: true, message: "Payment confirmed" });
+          }
+        } catch (stripeErr) {
+          console.log(`Stripe session lookup failed: ${stripeErr.message}`);
+        }
+      }
+
+
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+      const updatedOrder = await orderModel.findById(orderId);
+
+      if (updatedOrder && updatedOrder.payment === true) {
         await userModel.findByIdAndUpdate(userId, { cartData: {} });
         res.json({ success: true, message: "Payment confirmed" });
-      } else if (order) {
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-        const updatedOrder = await orderModel.findById(orderId);
-
-        if (updatedOrder && updatedOrder.payment === true) {
-          await userModel.findByIdAndUpdate(userId, { cartData: {} });
-          res.json({ success: true, message: "Payment confirmed" });
-        } else {
-          res.json({ success: false, message: "Payment pending" });
-        }
       } else {
-        res.json({ success: false, message: "Order not found" });
+        res.json({ success: false, message: "Payment pending" });
       }
     } else {
       const order = await orderModel.findById(orderId);
@@ -247,7 +312,22 @@ const verifyPaystack = async (req, res, next) => {
     if (status && data.status === "success") {
       const order = await orderModel.findById(orderId);
 
-      if (order && !order.payment) {
+      if (!order) {
+        return res.json({ success: false, message: "Order not found" });
+      }
+
+
+      if (data.metadata?.orderId !== orderId) {
+        console.log(`Paystack orderId mismatch: reference ${reference} belongs to order ${data.metadata?.orderId}, not ${orderId}`);
+        return res.json({ success: false, message: "Payment verification failed" });
+      }
+
+      if (order.paystackAmountKobo && data.amount !== order.paystackAmountKobo) {
+        console.log(`Paystack amount mismatch for order ${orderId}: expected ${order.paystackAmountKobo}, got ${data.amount}`);
+        return res.json({ success: false, message: "Payment verification failed" });
+      }
+
+      if (!order.payment) {
         await orderModel.findByIdAndUpdate(orderId, { payment: true });
       }
       if (userId) {

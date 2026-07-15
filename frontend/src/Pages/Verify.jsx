@@ -1,4 +1,4 @@
-// Verify.jsx - handles the redirect-back callback for both Stripe and Paystack
+
 import React, { useContext, useEffect } from "react";
 import { ShopContext } from "../context/ShopContext";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -73,8 +73,22 @@ const VerifyPayment = () => {
             { headers: { token } }
           );
           handleResult(response, "Payment successful! Order placed.");
-        } else if (success === "false") {
-          toast.error("Payment cancelled or failed");
+        } else if (success === "false" && orderId) {
+          try {
+            const response = await axios.post(
+              `${backendUrl}/api/order/verifystripe`,
+              {
+                success: "false",
+                orderId,
+                userId,
+              },
+              { headers: { token } }
+            );
+            toast.error(response.data.message || "Payment cancelled or failed");
+          } catch (cleanupError) {
+            console.error(cleanupError);
+            toast.error("Payment cancelled or failed");
+          }
           setTimeout(() => navigate("/cart"), 2000);
         } else {
           navigate("/cart");

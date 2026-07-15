@@ -9,7 +9,7 @@ import cartRouter from "./routes/cartRoute.js";
 import orderRouter from "./routes/orderRoute.js";
 import { stripeWebhook } from "./controllers/stripewebhook.js";
 
-//app congig
+
 const app = express();
 const port = process.env.PORT || 4000;
 
@@ -18,7 +18,7 @@ connectDB()
 connectCloudinary()
 
 app.post('/api/stripe/webhook', express.raw({type: 'application/json'}), stripeWebhook);
-//middleware
+
 app.use(express.json({
   verify: (req, res, buf) => {
     req.rawBody = buf;
@@ -36,8 +36,6 @@ app.use(cors({
 }))
 
 
-
-//api endpoints
 app.use('/api/user',userRouter)
 app.use('/api/product',productRouter)
 app.use("/api/cart",cartRouter)

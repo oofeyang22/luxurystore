@@ -33,6 +33,15 @@ const orderSchema = new mongoose.Schema({
     required: true,
     default: false,
   },
+  paymentIntentId: {
+    type: String,
+    required: false,
+  },
+
+  paystackAmountKobo: {
+    type: Number,
+    required: false,
+  },
   date: {
     type: Number,
     required: true,

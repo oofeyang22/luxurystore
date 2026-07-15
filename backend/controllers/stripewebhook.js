@@ -1,4 +1,4 @@
-// controllers/stripeWebhook.js
+
 import Stripe from "stripe";
 import orderModel from "../models/orderModel.js";
 import userModel from "../models/userModel.js";
@@ -20,16 +20,36 @@ export const stripeWebhook = async (req, res) => {
   
   if (event.type === 'checkout.session.completed') {
     const session = event.data.object;
-    const { orderId, userId } = session.metadata;
-    
+    const { orderId, userId } = session.metadata || {};
+
+    if (!orderId) {
+      console.log('Stripe webhook: no orderId in session metadata');
+      return res.json({ received: true });
+    }
+
     try {
+      const order = await orderModel.findById(orderId);
+
+      if (!order) {
+        console.log(`Stripe webhook: order ${orderId} not found`);
+        return res.json({ received: true });
+      }
+
+
+      if (order.payment) {
+        console.log(`Order ${orderId} already marked paid, skipping`);
+        return res.json({ received: true });
+      }
+
       await orderModel.findByIdAndUpdate(orderId, {
         payment: true,
         paymentIntentId: session.payment_intent,
         status: 'Confirmed'
       });
-      
-      await userModel.findByIdAndUpdate(userId, { cartData: {} });
+
+      if (userId) {
+        await userModel.findByIdAndUpdate(userId, { cartData: {} });
+      }
       console.log(`Payment confirmed for order ${orderId}`);
     } catch (error) {
       console.log(`Error: ${error.message}`);
