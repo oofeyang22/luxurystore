@@ -138,7 +138,7 @@ const Login = () => {
         )}
       </div>
 
-      <button className='w-full px-3 font-light py-2 border bg-gray-800 text-white'>
+      <button className='w-full px-3 font-light py-2 border bg-gray-800 text-white cursor-pointer'>
         {currState === "Sign Up" ? "Sign up" : "Login"}
       </button>
     </form>
